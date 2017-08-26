@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <flow name="availability.check:CheckAll">
+        <flow-ref name="variablesFlow" doc:name="variablesFlow"/>
+        <logger message="Trying to connect to DB" level="INFO" doc:name="Logger"/>
+        <db:select config-ref="Generic_Database_Configuration1" doc:name="Database">
+            <db:parameterized-query><![CDATA[SELECT UnitNo,BlockID,NoOfBdRooms,UnitPrice
+  FROM Community
+  where UnitStatus='Available']]></db:parameterized-query>
+        </db:select>
+        
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[payload.size()&gt;0]">
+                <foreach collection="payload" doc:name="For Each">
+                    <dw:transform-message doc:name="Transform Message">
+                        <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	"Unit Number": payload.UnitNo as :string,
+	"Block ID": payload.BlockID,
+	"Number of Bed Rooms": payload.NoOfBdRooms as :string,
+	"Unit Price": payload.UnitPrice as :string
+}]]></dw:set-payload>
+                    </dw:transform-message>
+                    <expression-component doc:name="Expression"><![CDATA[flowVars.payloadMap.add(payload);]]></expression-component>
+                    <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+                </foreach>
+            </when>
+            <otherwise>
+                <scripting:component doc:name="Groovy">
+                    <scripting:script engine="Groovy"><![CDATA[flowVars.varExceptionData.exceptionMsg="Unable to find any Available Units";
+
+throw new org.mule.module.apikit.exception.BadRequestException(flowVars.varExceptionData.exceptionMsg);]]></scripting:script>
+                </scripting:component>
+            </otherwise>
+        </choice>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload : flowVars.payloadMap]]></dw:set-payload>
+        </dw:transform-message>
+
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <catch-exception-strategy doc:name="Catch Exception Strategy"/>
+    </flow>
+    <flow name="availability.checkCheckUnit">
+        <flow-ref name="variablesFlow" doc:name="variablesFlow"/>
+        
+        <logger message="Trying to connect to DB" level="INFO" doc:name="Logger"/>
+        <db:select config-ref="Generic_Database_Configuration1" doc:name="Database">
+            <db:parameterized-query><![CDATA[SELECT NoOfBdRooms,UnitPrice
+  FROM Community
+  where UnitStatus='Available' and UnitNo=#[flowVars.UnitNumber]]]></db:parameterized-query>
+        </db:select>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[payload.size()&gt;0]">
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+  "Message": "Yes!! this unit is available",
+  "Number of Bed Rooms": payload[0].NoOfBdRooms as :string,
+  "Unit Price": payload[0].UnitPrice as :string
+}]]></dw:set-payload>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <scripting:component doc:name="Groovy">
+                    <scripting:script engine="Groovy"><![CDATA[flowVars.varExceptionData.exceptionMsg="Unable to find any Available Units";
+
+throw new org.mule.module.apikit.exception.BadRequestException(flowVars.varExceptionData.exceptionMsg);]]></scripting:script>
+                </scripting:component>
+            </otherwise>
+        </choice>
+
+    </flow>
+</mule>

@@ -1,0 +1,11 @@
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "id": "AvailabilityReqUnitRequest",    
+    "properties": {
+      "LeaseStartDate":  {"type": "string", "format": "date-time"},
+      "RequesterName": {"type": "string"}, 
+      "UnitNo": {"type": "string"}, 
+      "BlockID": {"type": "string"} 
+    },	"required": ["RequesterName", "UnitNo", "BlockID", "LeaseStartDate"]  
+  }

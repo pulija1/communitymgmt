@@ -1,0 +1,11 @@
+
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",   
+    "id": "AvailabilityCommonResponse",        
+    "properties": {
+      "message": {"type": "string"},
+      "messageDetail": {"type": "string"}
+    }
+  }
+

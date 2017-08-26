@@ -1,0 +1,230 @@
+#%RAML 1.0
+title: AvailabilityManagement
+version: V1
+baseUri: /availability
+mediaType: application/json
+documentation:
+  - title: Availability Management features
+    content: |
+      Following operations can be performed on CMDB via REST APIs:
+      -GET :  /communitymgmt/api/check/
+      -GET :  /communitymgmt/api/check/{UnitNo}
+      -POST:  /communitymanagement/Availability/Request/New
+      -GET:   /communitymanagement/Availability/Request/All
+      -PUT:   /communitymanagement/Availability/Request/Update/{ReqID}
+      -GET:   /communitymanagement/Availability/Request/Check/{ReqID}
+schemas:
+  AvailabilityCheckAllResponse: !include availabilityresources/AvailabilityCheckAllResponse.json 
+  AvailabilityCheckUnitResponse: !include availabilityresources/AvailabilityCheckUnitResponse.json
+  AvailabilityReqUnitRequest: !include availabilityresources/AvailabilityReqUnitRequest.json
+  AvailabilityReqUnitResponse: !include availabilityresources/AvailabilityReqUnitResponse.json
+  AvailabilityReqAllResponse: !include availabilityresources/AvailabilityReqAllResponse.json
+  AvailabilityReqUpdateRequest: !include availabilityresources/AvailabilityReqUpdateRequest.json
+  AvailabilityReqCheckResponse: !include availabilityresources/AvailabilityReqCheckResponse.json
+  AvailabilityCommonResponse: !include availabilityresources/AvailabilityCommonResponse.json
+    
+/check:
+   get:
+      description: API to get list of all available units
+      responses:
+        200:
+          description: returned when CI exists for given Name
+          body:
+            schema: AvailabilityCheckAllResponse                       
+            example: |
+              { 
+                "Unit Number": "1222",
+                "Block ID": "A1",
+                "Number of Bed Rooms": "2",
+                "Unit Price": "1665"
+              }                        
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}  
+/check/{UnitNo}:
+   get:
+      description: API to get check if unit is available
+      responses:
+        200:
+          description: returned when Unit is available for given Unit Number
+          body:
+            schema: AvailabilityCheckUnitResponse                       
+            example: |
+              { 
+                "Messege": "Yes!! this unit is available",
+                "Number of Bed Rooms": "2",
+                "Unit Price": "1665"
+              }                        
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}  
+/request:
+   get:
+      description: API to get list of all requests for available units
+      responses:
+        200:
+          description: returned when requests exists
+          body:
+            schema: AvailabilityReqAllResponse                       
+            example: |
+              { 
+                "ReqID": "1222",
+                "RequesterName": "A1",
+                "UnitNo": "2",
+                "BlockID": "1665",
+                "LeaseStartDate": "1665",
+                "Status": "Approved"
+              }                        
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}  
+   post:
+      description: API to submit a request
+      body:
+        schema: AvailabilityReqUnitRequest
+        example: |
+          { 
+            "RequesterName": "Ford Mustang",
+            "UnitNo": "1631",
+            "BlockID": "B1",
+            "LeaseStartDate": "2017-02-21T18:25:43.001-05:00"
+          }
+      responses:
+        200:
+          description: returned when Request is created successfully
+          body:
+            schema: AvailabilityReqUnitResponse                       
+            example: |            
+              { "ReqID": "LMNOP"} 
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}
+/request/{reqID}:
+   get:
+      description: API to get details of a specific request
+      responses:
+        200:
+          description: returned when requests exists
+          body:
+            schema: AvailabilityReqCheckResponse                       
+            example: |
+              { 
+                "ReqID": "1222",
+                "RequesterName": "A1",
+                "UnitNo": "2",
+                "BlockID": "1665",
+                "LeaseStartDate": "2017-02-21T18:25:43.001-05:00",
+                "Status": "Approved"
+              }                        
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}  
+   put:
+      description: API to update a request
+      body:
+        schema: AvailabilityReqUpdateRequest
+        example: |
+          { 
+            "Status":"Approved",
+            "ReqID":"LMOP"
+          }
+      responses:
+        200:
+          description: returned when Request is updated successfully
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Updated request successfully"} 
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}  

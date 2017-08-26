@@ -1,0 +1,11 @@
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "id": "IssueReqUnitRequest",    
+    "properties": {
+      "Reported By": {"type": "string"}, 
+      "Issue Description": {"type": "string"}, 
+      "Unit Num": {"type": "string"}, 
+      "Block ID": {"type": "string"} 
+    },	"required": ["Reported By", "Issue Description", "Unit Num"]  
+  }

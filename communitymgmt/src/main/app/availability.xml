@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+
+     <flow name="availability-main">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/api/availability/*" doc:name="HTTP"/>
+        <apikit:router config-ref="availability-config" doc:name="APIkit Router"/>
+        <exception-strategy ref="availability-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy"/>
+    </flow>
+    <flow name="availability-console">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/console/availability/*" doc:name="HTTP"/>
+        <apikit:console config-ref="availability-config" doc:name="APIkit Console"/>
+        <exception-strategy ref="availability-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy"/>
+    </flow>
+    <flow name="put:/request/{reqID}:application/json:availability-config">
+        <flow-ref name="request:UpdateStatus" doc:name="request:UpdateStatus"/>
+        <set-payload value=" { &quot;message&quot;: &quot;Updated request successfully&quot;} " mimeType="application/json" doc:name="Set Payload"/>
+
+    </flow>
+    <flow name="get:/check:availability-config">
+        <flow-ref name="availability.check:CheckAll" doc:name="availability.check:CheckAll"/>
+
+    </flow>
+    <flow name="get:/check/{UnitNo}:availability-config">
+        <flow-ref name="availability.checkCheckUnit" doc:name="availability.checkCheckUnit"/>
+
+    </flow>
+    <flow name="get:/request:availability-config">
+        <flow-ref name="request:GETAllRequests" doc:name="request:GETAllRequests"/>
+
+    </flow>
+    <flow name="get:/request/{reqID}:availability-config">
+        <flow-ref name="request:GETOneRequests" doc:name="request:GETOneRequests"/>
+
+    </flow>
+    <flow name="post:/request:application/json:availability-config">
+        <flow-ref name="request:CreateRequest" doc:name="request:CreateRequest"/>
+
+    </flow>
+    <apikit:mapping-exception-strategy name="availability-apiKitGlobalExceptionMapping">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Method not allowed&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="415">
+            <apikit:exception value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Unsupported media type&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="406">
+            <apikit:exception value="org.mule.module.apikit.exception.NotAcceptableException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Not acceptable&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="400">
+            <apikit:exception value="org.mule.module.apikit.exception.BadRequestException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+	       <expression-component doc:name="Expression"><![CDATA[if (flowVars.varExceptionData.exceptionMsg == null) {
+	flowVars.varExceptionData.exceptionMsg = "Bad request";
+}]]></expression-component>
+            <logger message="#[ &quot;messageDetail&quot;: java.net.URLEncoder.encode(exception.?getMessage())]" level="INFO" doc:name="Logger"/>
+           <set-payload value="{ &quot;message&quot;: &quot;#[flowVars.varExceptionData.exceptionMsg]&quot;}" doc:name="Set Payload"/>
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+</mule>

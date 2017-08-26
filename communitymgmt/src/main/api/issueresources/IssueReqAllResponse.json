@@ -1,0 +1,14 @@
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "id": "IssueReqAllResponse",    
+    "properties": {
+      "Issue Status": {"enum": ["Approved", "Rejected"]},	
+      "Issue ID": {"type": "string"},	
+      "Reported By": {"type": "string"},
+      "Issue Description": {"type": "string"},	
+      "Unit Num": {"type": "string"},	
+      "Block ID": {"type": "string"},	
+      "ReportedDate": {"type": "string"}	  
+    },	"required": ["Reported By", "Issue ID"]  
+  }

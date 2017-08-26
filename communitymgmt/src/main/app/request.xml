@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+    <flow name="request:CreateRequest">
+        <json:json-to-object-transformer returnClass="java.util.HashMap" doc:name="JSON to Object"/>
+        <!-- <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+
+{
+  "RequesterName": "Ford Mustang",
+  "UnitNo": "1631",
+  "BlockID": "B1",
+  "LeaseStartDate": "2017-02-21T18:25:43.001-05:00"
+}]]></dw:set-payload>
+        </dw:transform-message> -->
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <flow-ref name="Lookup:Request:Name&amp;UnitNo" doc:name="Lookup:Request:Name&amp;UnitNo"/>
+        <choice doc:name="Choice">
+            <when expression="#[flowVars.reqflag==0]">
+                <db:insert config-ref="Generic_Database_Configuration1" doc:name="Database">
+                    <db:parameterized-query><![CDATA[INSERT INTO BookUnit
+  (RequesterName,LeaseStartDate,ReqStatus,UnitNum,Block)
+     VALUES
+   (#[payload.RequesterName],
+   	#[payload.LeaseStartDate],
+	'Pending',
+   	#[payload.UnitNo],
+   	#[payload.BlockID])]]></db:parameterized-query>
+                </db:insert>
+                <db:select config-ref="Generic_Database_Configuration1" doc:name="Database">
+                    <db:parameterized-query><![CDATA[SELECT TOP 1 ReqID
+  FROM BookUnit
+  order by ReqID DESC]]></db:parameterized-query>
+                </db:select>
+                <logger message="#['New request is created with Request ID : '+payload[0].ReqID]" level="INFO" doc:name="Logger"/>
+            </when>
+            <otherwise>
+                <flow-ref name="variablesFlow" doc:name="variablesFlow"/>
+                <logger message="Request already exists" level="INFO" doc:name="Logger"/>
+                  <scripting:component doc:name="Groovy">
+                    <scripting:script engine="Groovy"><![CDATA[flowVars.varExceptionData.exceptionMsg="This request already exists with RequestID:"+flowVars.ReqID +" and Status: "+flowVars.ReqStatus ;
+
+throw new org.mule.module.apikit.exception.BadRequestException(flowVars.varExceptionData.exceptionMsg);]]></scripting:script>
+                </scripting:component>
+            </otherwise>
+        </choice>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	'ReqID':payload[0].ReqID
+}]]></dw:set-payload>
+        </dw:transform-message>
+    </flow>
+    <sub-flow name="Lookup:Request:Name&amp;UnitNo">
+        <db:select config-ref="Generic_Database_Configuration1" doc:name="Database">
+            <db:parameterized-query><![CDATA[SELECT ReqID,ReqStatus 
+  FROM BookUnit
+  where RequesterName=#[payload.RequesterName] and
+  		UnitNum=#[payload.UnitNo]]]></db:parameterized-query>
+        </db:select>
+        <expression-component doc:name="Expression"><![CDATA[if(payload.size()==0){
+flowVars.reqflag=0;
+}
+else{
+flowVars.reqflag=1;
+flowVars.ReqID=payload[0].'ReqID';
+flowVars.ReqStatus =payload[0].'ReqStatus';
+}]]></expression-component>
+    </sub-flow>
+    <flow name="request:UpdateStatus">
+        <json:json-to-object-transformer doc:name="JSON to Object" returnClass="java.util.HashMap"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <db:update config-ref="Generic_Database_Configuration1" doc:name="Database">
+            <db:parameterized-query><![CDATA[UPDATE BookUnit
+SET ReqStatus=#[payload.Status]
+where ReqID=#[payload.ReqID]]]></db:parameterized-query>
+        </db:update>
+        <logger message="Updated records successfully" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="request:GETAllRequests">
+        <logger message="requesting DB to get all records" level="INFO" doc:name="Logger"/>
+        <flow-ref name="variablesFlow" doc:name="variablesFlow"/>
+        <db:select config-ref="Generic_Database_Configuration1" doc:name="Database">
+            <db:parameterized-query><![CDATA[Select * from BookUnit]]></db:parameterized-query>
+        </db:select>
+        <foreach collection="payload" doc:name="For Each">
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	BlockID: payload.Block,
+	LeaseStartDate: payload.LeaseStartDate as :string,
+	ReqID: payload.ReqID as :string,
+	RequesterName: payload.RequesterName,
+	Status: payload.ReqStatus,
+	UnitNo: payload.UnitNum as :string
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <expression-component doc:name="Expression"><![CDATA[flowVars.payloadMap.add(payload);]]></expression-component>
+        </foreach>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload:flowVars.payloadMap]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="request:GETOneRequests">
+        <logger message="requesting DB to get records for Unit" level="INFO" doc:name="Logger"/>
+        <db:select config-ref="Generic_Database_Configuration1" doc:name="Database">
+            <db:parameterized-query><![CDATA[Select * from BookUnit
+where ReqID=#[message.inboundProperties.'http.uri.params'.reqID]]]></db:parameterized-query>
+        </db:select>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload map {
+	  "ReqID": payload[0].ReqID,
+      "RequesterName": payload[0].RequesterName,
+      "UnitNo": payload[0].UnitNum,
+      "BlockID": payload[0].Block,
+      "LeaseStartDate": payload[0].LeaseStartDate,
+      "Status": payload[0].ReqStatus
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>

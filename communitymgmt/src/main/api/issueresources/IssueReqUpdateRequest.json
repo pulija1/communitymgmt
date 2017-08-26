@@ -1,0 +1,9 @@
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "id": "IssueReqUpdateRequest",    
+    "properties": {
+      "Issue Status": {"enum": ["Approved", "Rejected"]},	
+      "Issue ID": {"type": "string"}     
+    },	"required": ["Issue Status", "Issue ID"]  
+  }

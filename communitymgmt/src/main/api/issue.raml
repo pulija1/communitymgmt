@@ -1,0 +1,163 @@
+#%RAML 1.0
+title: Issue
+version: V1
+baseUri: /issue
+mediaType: application/json
+documentation:
+  - title: Unit Issue Handling features
+    content: |
+      Following operations can be performed on CMDB via REST APIs:
+      -POST:  /communitymgmt/api/problem/issue/
+      -GET:   /communitymgmt/api/problem/issue/
+      -PUT:   /communitymgmt/api/problem/issue/{issueID}
+      -GET:   /communitymgmt/api/problem/issue/{issueID}
+schemas:
+  IssueReqUnitRequest: !include issueresources/IssueReqUnitRequest.json
+  IssueReqUnitResponse: !include issueresources/IssueReqUnitResponse.json
+  IssueReqAllResponse: !include issueresources/IssueReqAllResponse.json
+  IssueReqUpdateRequest: !include issueresources/IssueReqUpdateRequest.json
+  IssueReqCheckResponse: !include issueresources/IssueReqCheckResponse.json
+  AvailabilityCommonResponse: !include availabilityresources/AvailabilityCommonResponse.json
+    
+/issue:
+   get:
+      description: API to get list of all issues of units
+      responses:
+        200:
+          description: returned when issues exists
+          body:
+            schema: IssueReqAllResponse                       
+            example: |
+              { 
+                "Issue Status": "Approved",
+                "Issue ID": "112",
+                "Reported By": "Ram",
+                "Issue Descriptio": "Washer dryer issue",
+                "Unit Num": "12110",
+                "Block ID": "A1",
+                "ReportedDate": "2017-02-21T18:25:43.001-05:00"
+              }                        
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}  
+   post:
+      description: API to submit a request
+      body:
+        schema: IssueReqUnitRequest
+        example: |
+              { 
+                "Reported By": "Ram",
+                "Issue Description": "Washer dryer issue",
+                "Unit Num": "12110",
+                "Block ID": "A1"
+              }
+      responses:
+        200:
+          description: returned when Request is created successfully
+          body:
+            schema: IssueReqUnitResponse                       
+            example: |            
+              { "Issue ID": "112"} 
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}
+
+/issue/{issueID}:
+   get:
+      description: API to get details of a specific request
+      responses:
+        200:
+          description: returned when requests exists
+          body:
+            schema: IssueReqCheckResponse                       
+            example: |
+              { 
+                "Issue ID": "1222",
+                "Reported By": "A1",
+                "Unit Num": "2",
+                "Block": "1665",
+                "Reported Date": "2017-02-21T18:25:43.001-05:00",
+                "Issue Status": "Approved"
+              }                        
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}  
+   put:
+      description: API to update a request
+      body:
+        schema: IssueReqUpdateRequest
+        example: |
+          { 
+            "Issue Status": "Approved",
+            "Issue ID": "LMOP"
+          }
+      responses:
+        200:
+          description: returned when Request is updated successfully
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Updated request successfully"} 
+        401:
+          description: returned when auth user name and auth password is not correct
+          body:
+            schema: AvailabilityCommonResponse    
+            example: |
+              { "message": "Unathenticated" }     
+        404:
+          description: returned when the url specified is wrong or given Name is not found
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Resource not found"}        
+        500:
+          description: returned when there is server error                
+          body:
+            schema: AvailabilityCommonResponse                       
+            example: |            
+              { "message": "Internal Server Error", "messageDetail": "Unknown"}  

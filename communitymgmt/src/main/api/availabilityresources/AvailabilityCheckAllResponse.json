@@ -1,0 +1,12 @@
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "id": "AvailabilityCheckAllResponse",    
+    "properties": {
+      "Unit Number": {"type": "string"},
+	  "Block ID": {"type": "string"},
+	  "Number of Bed Rooms": {"type": "string"},
+	  "Unit Price": {"type": "string"}
+    }  
+  }
+  
